@@ -1,0 +1,161 @@
+
+
+.data 0x0
+  executionTime:	.word 0
+  numberOfProcessors:	.word 0 
+  totalPrice:		.word 0
+  dsbl:		.word 0
+  
+  timePrompt:		.asciiz "Please enter the desired execution time (in seconds): "	
+  pricePrompt:		.asciiz "Please enter the price of the processor(in dollars): "
+  cpiPrompt:		.asciiz "Please enter the average CPI of the processor: "
+  executionTimeIs:	.asciiz "Execution time in seconds: "
+  isDesired:		.asciiz "This processor meets the desired execution time, adding to cart."
+  notDesired:		.asciiz "This processor does not meet the desired execution time."
+  totalProcessors:	.asciiz "Total number of processors purchased: "
+  isTotalPrice:		.asciiz "Total price of processors purchased: "
+  doneShopping:		.asciiz "You are done shopping for processors."
+  newline:		.asciiz "\n"
+
+ .text
+main:
+ # Print the prompt for time
+  addi 	$v0, $0, 4  	# system call 4 is for printing a string
+  la 		$a0, timePrompt 	# address of timePrompt is in $a0
+  syscall           		# print the string
+ 
+  # Read the Execution TIme
+  addi	$v0, $0, 5		# system call 5 is for reading an integer
+  syscall 				# integer value read is in $v0
+  add	$23, $0, $v0			# copy the execution time into $8
+  
+  # Initialize number of processors, total price, and cpu time difference
+  sw 	$s0, numberOfProcessors	# number of Processors stored in $s0
+  sw 	$s1, totalPrice		# total Price stored in $s1
+  addi $s0, $s0, 0
+  addi $s1, $s1, 0
+  addi $s2, $s2, 0
+  j	loop	
+ 		
+loop:
+ 
+ start:
+  sw	$s3, dsbl	
+  addi $s3, $s3, 0
+  
+  # Print price prompt
+  addi $v0, $0, 4	
+  la		$a0, pricePrompt	
+  syscall	
+  
+  # Read in price
+  addi $v0, $0, 5	
+  syscall 			
+  add	$20, $0, $v0		
+  
+  # if price = 0 exit
+  beq $20, $0, exit
+  
+  # Print CPI prompt
+  addi $v0, $0, 4	
+  la		$a0, cpiPrompt		
+  syscall	
+  
+  # Read in CPI
+  addi $v0, $0, 5	
+  syscall			
+  add $10, $0, $v0		
+  
+  # Print CPU
+  addi $v0, $0, 4	
+  la		$a0, executionTimeIs	
+  syscall	
+  add $21, $0, $a0			#
+  sll $21, $10, 1
+  addi $v0, $0, 1
+  la		$a0, ($21)
+  syscall	
+  addi $v0, $0, 4
+  la		$a0, newline
+  syscall
+  
+  # find time diff
+  sub $s2, $23, $21	
+  
+  # should we add to cart?
+  bgez $s2, else
+  addi $s0, $s0, 0	
+  addi $s1, $s1, 0	
+  addi $s3, $s3, 0	
+  j continue
+  
+ else:
+  addi $s0, $s0, 1	# increment # processors by 1
+  add $s1, $s1, $20	# add to total price
+  addi $s3, $s3, 1	# if 1 -> desirable
+  j otherelse
+  
+ continue:
+ # indicate if desired
+ addi $v0, $0, 4	
+  la		$a0, notDesired		
+  syscall	
+ addi $v0, $0, 4
+ la 		$a0, newline
+ syscall
+ 
+ j start 
+ 
+ otherelse: 
+ # we want proc if d = 1, print out
+ addi $v0, $0, 4	
+  la		$a0, isDesired		
+  syscall	
+  addi $v0, $0, 4
+  la		$a0, newline
+  syscall
+  
+  j start
+  
+  #================================================================================================#
+exit:
+  # TO-DO: Complete the behavior of the program after exiting the loop.
+  # Indicate that we have left the loop and output the number of processors and total price.
+  #================================================================================================#
+ 
+ addi $v0, $0, 4
+ la		$a0, newline
+ syscall
+ # done shopping
+ addi $a0, $0, 4	
+ la		$a0, doneShopping	
+ syscall	
+ addi $a0, $0, 4
+ la 		$a0, newline
+ syscall
+ 
+ # print final info
+  addi $v0, $0, 4	
+  la		$a0, totalProcessors	
+  syscall
+  addi $v0, $0, 1	
+  la		$a0, ($s0)
+  syscall	
+  addi $v0, $0, 4
+  la		$a0, newline
+  syscall
+ 
+  addi $v0, $0, 4	
+  la		$a0, isTotalPrice	
+  syscall
+  addi $v0, $0, 1			
+  la 		$a0, ($s1)
+  syscall	
+  addi $v0, $0, 4
+  la		$a0, newline
+  syscall
+  #================================================================================================#
+  
+  # Boilerplate system call to terminate program.
+  ori $v0, $0, 10       	# system call code 10 for exit
+  syscall   			
